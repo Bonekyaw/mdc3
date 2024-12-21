@@ -1,0 +1,11 @@
+** Expo Go 
+
+1. Install nodejs LTS ( 22.12.0)
+2. Install git 
+3. Install vscode 
+4. npx create-expo-app@latest ( via Terminal )
+5. Open the project via vscode 
+6. npx expo start 
+7. npm install ( If an error occurs )
+8. npx expo start 
+9. npx expo start --tunnel ( If QR scan error occurs )
