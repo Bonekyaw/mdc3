@@ -6,6 +6,11 @@
 4. npx create-expo-app@latest ( via Terminal )
 5. Open the project via vscode 
 6. npx expo start 
-7. npm install ( If an error occurs )
-8. npx expo start 
-9. npx expo start --tunnel ( If QR scan error occurs )
+*.  npm install ( If an error occurs )
+*. npx expo start 
+*. npx expo start --tunnel ( If QR scan error occurs )
+
+
+***  Setting the set-executionPolicy to RemoteSigned in the Powershell in Windows OS
+
+Set-ExecutionPolicy -Scope CurrentUser RemoteSigned -Force
