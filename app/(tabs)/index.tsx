@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, FlatList } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import MyButton from "@/components/shop/MyButton";
+import Card from "@/components/shop/Card";
 
 const users = [
   { id: 1, name: "David" },
@@ -21,13 +21,15 @@ const users = [
 export default function HomeScreen() {
   return (
     <SafeAreaView>
-      <View style={styles.container}>
-        {users.map((user) => (
-          <View style={styles.card} key={user.id}>
-            <Text style={styles.text}>{user.name}</Text>
-          </View>
-        ))}
-      </View>
+      <FlatList
+        data={users}
+        renderItem={({ item }) => <Card {...item} />}
+        keyExtractor={(item) => item.id.toString()}
+        contentContainerStyle={styles.container}
+        numColumns={2}
+        columnWrapperStyle={styles.row}
+        showsVerticalScrollIndicator={false}
+      />
     </SafeAreaView>
   );
 }
@@ -35,23 +37,9 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     padding: 17,
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
     gap: 7,
   },
-  card: {
-    width: "48%",
-    height: 200,
-    backgroundColor: "#687076",
-    borderRadius: 7,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  text: {
-    fontSize: 27,
-    color: "white",
-    fontWeight: "bold",
-    // textAlign: "center",
+  row: {
+    justifyContent: "space-between",
   },
 });
