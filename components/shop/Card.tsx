@@ -3,23 +3,25 @@ import {
   Text,
   View,
   Dimensions,
-  Image,
+  // Image,
   Pressable,
 } from "react-native";
 import React, { useState } from "react";
-// import { Image } from "expo-image";
+import { Image } from "expo-image";
+import { API_URL } from "@/config";
 
 const { width, height } = Dimensions.get("screen");
 
 type cardProps = {
   id: number;
   name: string;
+  image: string;
 };
 
 const blurhash =
   "|rF?hV%2WCj[ayj[a|j[az_NaeWBj@ayfRayfQfQM{M|azj[azf6fQfQfQIpWXofj[ayj[j[fQayWCoeoeaya}j[ayfQa{oLj?j[WVj[ayayj[fQoff7azayj[ayj[j[ayofayayayj[fQj[ayayj[ayfjj[j[ayjuayj[";
 
-const Card = ({ id, name }: cardProps) => {
+const Card = ({ id, name, image }: cardProps) => {
   const [isClick, setIsClick] = useState(false);
 
   return (
@@ -29,8 +31,11 @@ const Card = ({ id, name }: cardProps) => {
     >
       {/* <Text style={styles.text}>{name}</Text> */}
       <Image
-        source={{ uri: "http://localhost:4000/teen.png" }}
+        source={{ uri: API_URL + image }}
         style={styles.image}
+        placeholder={{ blurhash }}
+        contentFit="cover"
+        transition={1000}
       />
     </Pressable>
   );
