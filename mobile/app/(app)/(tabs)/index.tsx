@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useFocusEffect } from "expo-router";
 
 import Card from "@/components/shop/Card";
 import { API_URL } from "@/config";
@@ -25,10 +26,13 @@ type UserProps = {
 };
 
 export default function HomeScreen() {
-  const [users, setUsers] = useState<UserProps[]>();
+  const [users, setUsers] = useState<UserProps[]>([]);
   const [loading, setLoading] = useState(false);
+  // ....
 
   const fetchUsers = async () => {
+    console.log("Fetching Users ---");
+
     setLoading(true);
     try {
       const response = await fetch(`${API_URL}/users`);
@@ -43,15 +47,21 @@ export default function HomeScreen() {
     }
   };
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
+  // useEffect(() => {
+  //   fetchUsers();
+  // }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchUsers();
+    }, [])
+  );
 
   return (
     <SafeAreaView>
       {loading ? (
         <ActivityIndicator />
-      ) : (
+      ) : users?.length > 0 ? (
         <FlatList
           data={users}
           renderItem={({ item }) => <Card {...item} />}
@@ -61,6 +71,8 @@ export default function HomeScreen() {
           columnWrapperStyle={styles.row}
           showsVerticalScrollIndicator={false}
         />
+      ) : (
+        <Text>No Users Found!</Text>
       )}
     </SafeAreaView>
   );
