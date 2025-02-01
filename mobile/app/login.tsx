@@ -34,13 +34,6 @@ export default function SignIn() {
     setShowPassword((showState) => !showState);
   };
 
-  // const register = () => {
-  //   signIn();
-  //   // Navigate after signing in. You may want to tweak this to ensure sign-in is
-  //   // successful before navigating.
-  //   router.replace("/");
-  // };
-
   const {
     control,
     handleSubmit,
@@ -52,7 +45,13 @@ export default function SignIn() {
     },
   });
 
-  const onSubmit = (formState: any) => console.log(formState);
+  const onSubmit = (formState: any) => {
+    console.log(formState);
+    signIn();
+    // Navigate after signing in. You may want to tweak this to ensure sign-in is
+    // successful before navigating.
+    router.replace("/");
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-white px-5">
