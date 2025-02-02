@@ -20,6 +20,11 @@ const c1 = require("@/data/shop/c1.png");
 const c2 = require("@/data/shop/c2.png");
 const c3 = require("@/data/shop/c3.png");
 
+const p1 = require("@/data/shop/pager1.png");
+const p2 = require("@/data/shop/pager2.png");
+const p3 = require("@/data/shop/pager3.png");
+const p4 = require("@/data/shop/pager4.png");
+
 export const categories = [
   { id: 1, name: "Men", image: Man },
   { id: 2, name: "Women", image: Woman },
@@ -571,9 +576,10 @@ export const products = [
 ];
 
 export const sample = [
-  { key: 1, image: c1 },
-  { key: 2, image: c2 },
-  { key: 3, image: c3 },
+  { key: 1, image: p1 },
+  { key: 2, image: p2 },
+  { key: 3, image: p3 },
+  { key: 4, image: p4 },
 ];
 
 export const selectItems = {

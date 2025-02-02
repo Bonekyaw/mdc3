@@ -6,21 +6,30 @@ import { HStack } from "@/components/ui/hstack";
 import { Text } from "@/components/ui/text";
 import Cart from "@/components/shop/Cart";
 import { Pressable } from "@/components/ui/pressable";
-import { ScrollView } from "react-native";
+import { Dimensions, ScrollView } from "react-native";
 import Title from "@/components/shop/Title";
 import { Box } from "@/components/ui/box";
-import { categories } from "@/data";
+import { categories, products } from "@/data";
 import { FlashList } from "@shopify/flash-list";
 import Category from "@/components/shop/Category";
+import Product from "@/components/shop/Product";
+import { router } from "expo-router";
+import { Button, ButtonIcon, ButtonText } from "@/components/ui/button";
+import { ArrowUpRight } from "lucide-react-native";
 
 const blurhash =
   "|rF?hV%2WCj[ayj[a|j[az_NaeWBj@ayfRayfQfQM{M|azj[azf6fQfQfQIpWXofj[ayj[j[fQayWCoeoeaya}j[ayfQa{oLj?j[WVj[ayayj[fQoff7azayj[ayj[j[ayofayayayj[fQj[ayayj[ayfjj[j[ayjuayj[";
 
 const Home = () => {
   const [select, setSelect] = useState(1);
+  const width = Dimensions.get("screen").width;
 
   const onSelectHandler = (id: number) => {
     setSelect(id);
+  };
+
+  const goDetail = (id: number) => {
+    router.navigate({ pathname: "/detail", params: { id } });
   };
 
   return (
@@ -47,7 +56,7 @@ const Home = () => {
           contentFit="cover"
           transition={1000}
         />
-        <Box className="mt-4 px-5">
+        <Box className="mt-4 px-5 pb-40">
           <Title title="Shop By Category" actionText="See All" />
           <FlashList
             data={categories}
@@ -61,6 +70,22 @@ const Home = () => {
             contentContainerStyle={{ paddingBottom: 7 }}
           />
           <Title title="Recommended for You" actionText="See All" />
+          <FlashList
+            data={products}
+            numColumns={width < 600 ? 2 : width < 768 ? 3 : 4}
+            renderItem={({ item }) => (
+              <Product {...item} onCallRoute={goDetail} />
+            )}
+            showsVerticalScrollIndicator={false}
+            estimatedItemSize={200}
+            contentContainerStyle={{ paddingTop: 4 }}
+          />
+          <Button className="mx-auto mt-8 h-14 w-[200px] rounded-lg bg-blue-500 text-white">
+            <ButtonText size="lg" className="font-bold">
+              Explore More
+            </ButtonText>
+            <ButtonIcon as={ArrowUpRight} className="ml-2" />
+          </Button>
         </Box>
       </ScrollView>
     </SafeAreaView>
