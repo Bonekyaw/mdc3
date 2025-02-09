@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 
@@ -21,12 +21,15 @@ const blurhash =
   "|rF?hV%2WCj[ayj[a|j[az_NaeWBj@ayfRayfQfQM{M|azj[azf6fQfQfQIpWXofj[ayj[j[fQayWCoeoeaya}j[ayfQa{oLj?j[WVj[ayayj[fQoff7azayj[ayj[j[ayofayayayj[fQj[ayayj[ayfjj[j[ayjuayj[";
 
 const Home = () => {
+  console.log("Rendering Home ----");
+
   const [select, setSelect] = useState(1);
   const width = Dimensions.get("screen").width;
+  const numColumns = width < 600 ? 2 : width < 768 ? 3 : 4;
 
-  const onSelectHandler = (id: number) => {
+  const onSelectHandler = useCallback((id: number) => {
     setSelect(id);
-  };
+  }, []);
 
   const goDetail = (id: number) => {
     router.navigate({ pathname: "/detail", params: { id } });
@@ -50,7 +53,10 @@ const Home = () => {
       </HStack>
       <ScrollView showsVerticalScrollIndicator={false}>
         <Image
-          style={{ width: "100%", aspectRatio: 20 / 9 }}
+          style={{
+            width: "100%",
+            aspectRatio: 20 / 9,
+          }}
           source={require("@/assets/images/banner6.png")}
           placeholder={{ blurhash }}
           contentFit="cover"
@@ -72,7 +78,7 @@ const Home = () => {
           <Title title="Recommended for You" actionText="See All" />
           <FlashList
             data={products}
-            numColumns={width < 600 ? 2 : width < 768 ? 3 : 4}
+            numColumns={numColumns}
             renderItem={({ item }) => (
               <Product {...item} onCallRoute={goDetail} />
             )}

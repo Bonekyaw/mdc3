@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Image } from "expo-image";
 
 import { Card } from "@/components/ui/card";
@@ -15,13 +16,9 @@ type CategoryProps = {
   select: number;
 };
 
-export default function Category({
-  id,
-  name,
-  image,
-  onSelect,
-  select,
-}: CategoryProps) {
+const Category = ({ id, name, image, onSelect, select }: CategoryProps) => {
+  console.log("Rendering Category ----", id);
+
   return (
     <Pressable onPress={() => onSelect(id)}>
       <Card className="items-center">
@@ -46,4 +43,6 @@ export default function Category({
       </Card>
     </Pressable>
   );
-}
+};
+
+export default memo(Category);

@@ -38,6 +38,8 @@ export default function Product({
   onCallRoute,
 }: ProductType) {
   const [fill, setFill] = useState(false);
+  console.log("Rendering Product ----", id);
+
   return (
     <Pressable className="flex-1" onPress={() => onCallRoute(id)}>
       <Card className="relative p-2">

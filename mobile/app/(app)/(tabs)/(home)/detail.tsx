@@ -53,6 +53,8 @@ type CartProps = {
 };
 
 const Detail = () => {
+  console.log("Rendering Detail ---");
+
   const { id } = useLocalSearchParams();
   const product = products.find((p) => p.id === +id);
   const [colors, setColors] = React.useState([]);

@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { HStack } from "@/components/ui/hstack";
 import { Text } from "@/components/ui/text";
 import { Pressable } from "@/components/ui/pressable";
@@ -7,6 +8,8 @@ type TitleProps = {
   actionText: string;
 };
 const Title = ({ title, actionText }: TitleProps) => {
+  console.log("Rendering Title ----");
+
   return (
     <HStack className="items-center justify-between">
       <Text size="lg" className="font-medium text-black">
@@ -19,4 +22,4 @@ const Title = ({ title, actionText }: TitleProps) => {
   );
 };
 
-export default Title;
+export default memo(Title);

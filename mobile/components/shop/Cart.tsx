@@ -4,8 +4,11 @@ import { Badge, BadgeText } from "@/components/ui/badge";
 import { Box } from "@/components/ui/box";
 import { VStack } from "@/components/ui/vstack";
 import { Icon } from "@/components/ui/icon";
+import { memo } from "react";
 
-export default function Cart() {
+function Cart() {
+  console.log("Rendering Cart Icon ----");
+
   return (
     <Box className="items-center">
       <VStack>
@@ -20,3 +23,5 @@ export default function Cart() {
     </Box>
   );
 }
+
+export default memo(Cart);

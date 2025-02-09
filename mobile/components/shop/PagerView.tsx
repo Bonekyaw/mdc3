@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback, useRef, useState } from "react";
+import React, { useMemo, useCallback, useRef, useState, memo } from "react";
 import { useFocusEffect } from "expo-router";
 import {
   StyleSheet,
@@ -61,8 +61,8 @@ const Pagination = ({
   );
 };
 
-export default function PagerViewScreen() {
-  // console.log("View pager rendered");
+function PagerViewScreen() {
+  console.log("View pager rendered ---");
 
   const ref = React.useRef<PagerView>(null);
   // const [currentPage, setCurrentPage] = useState(0);
@@ -178,3 +178,5 @@ const styles = StyleSheet.create({
     borderColor: "#88dfef",
   },
 });
+
+export default memo(PagerViewScreen);
