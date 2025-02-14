@@ -381,7 +381,7 @@ export const login = [
     });
 
     const jwtToken = jwt.sign(payload, process.env.TOKEN_SECRET!, {
-      expiresIn: 60 * 15, // "15 mins"
+      expiresIn: 60 * 3, // "3 mins"
     });
 
     res.status(200).json({

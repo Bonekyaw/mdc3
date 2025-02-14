@@ -28,6 +28,12 @@ export const getProductById = async (productId: number, userId: number) => {
           id: true,
         },
       },
+      images: {
+        select: {
+          id: true,
+          image: true,
+        },
+      },
     },
   });
 };
