@@ -16,6 +16,7 @@ import Product from "@/components/shop/Product";
 import { router } from "expo-router";
 import { Button, ButtonIcon, ButtonText } from "@/components/ui/button";
 import { ArrowUpRight } from "lucide-react-native";
+import { Card } from "@/components/ui/card";
 
 const blurhash =
   "|rF?hV%2WCj[ayj[a|j[az_NaeWBj@ayfRayfQfQM{M|azj[azf6fQfQfQIpWXofj[ayj[j[fQayWCoeoeaya}j[ayfQa{oLj?j[WVj[ayayj[fQoff7azayj[ayj[j[ayofayayayj[fQj[ayayj[ayfjj[j[ayjuayj[";
@@ -68,7 +69,28 @@ const Home = () => {
             data={categories}
             extraData={select}
             renderItem={({ item }) => (
-              <Category {...item} onSelect={onSelectHandler} select={select} />
+              <Pressable onPress={() => setSelect(item.id)}>
+                <Card className="items-center">
+                  <Image
+                    style={[
+                      { width: 56, height: 56, marginBottom: 7 },
+                      select === item.id && {
+                        borderColor: "orange",
+                        borderWidth: 2,
+                        borderRadius: 28,
+                      },
+                    ]}
+                    source={item.image}
+                    placeholder={{ blurhash }}
+                    contentFit="cover"
+                    transition={1000}
+                  />
+
+                  <Text size="sm" bold>
+                    {item.name}
+                  </Text>
+                </Card>
+              </Pressable>
             )}
             horizontal
             showsHorizontalScrollIndicator={false}
