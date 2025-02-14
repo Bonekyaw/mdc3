@@ -69,28 +69,7 @@ const Home = () => {
             data={categories}
             extraData={select}
             renderItem={({ item }) => (
-              <Pressable onPress={() => setSelect(item.id)}>
-                <Card className="items-center">
-                  <Image
-                    style={[
-                      { width: 56, height: 56, marginBottom: 7 },
-                      select === item.id && {
-                        borderColor: "orange",
-                        borderWidth: 2,
-                        borderRadius: 28,
-                      },
-                    ]}
-                    source={item.image}
-                    placeholder={{ blurhash }}
-                    contentFit="cover"
-                    transition={1000}
-                  />
-
-                  <Text size="sm" bold>
-                    {item.name}
-                  </Text>
-                </Card>
-              </Pressable>
+              <Category {...item} onSelect={onSelectHandler} select={select} />
             )}
             horizontal
             showsHorizontalScrollIndicator={false}
