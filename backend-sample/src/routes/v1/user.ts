@@ -1,37 +1,26 @@
 import express from "express";
 
-import upload from "../../middlewares/uploadFile";
 import {
-  uploadProfile,
   index,
-  store,
   show,
-  update,
-  destroy,
-} from "../../controllers/userController";
+  toggleFavourite,
+} from "../../controllers/productController";
+import { getCategoryList } from "../../controllers/categoryController";
 
 const router = express.Router();
 
-// Upload single image
-router.put("/users/upload", upload.single("avatar"), uploadProfile);
-// Upload multiple images
-// router.put('/users/upload',upload.array('avatar'), userController.uploadProfile );
+router.get("/categories", getCategoryList);
+// router.get('/categories', authorise(true, "admin"), index);
 
-// GET localhost:8080/api/v1/users?page=1&limit=5
-// Get all users by Pagination
-router.get("/users", index);
-// router.get('/users', authorise(true, "admin"), index);
+// GET localhost:8080/api/v1/products?limit=10&category=1&cursor=5
+// Get all products
+router.get("/products", index);
+// router.get('/products', authorise(true, "admin"), index);
 
-// POST localhost:8080/api/v1/users - create an user
-router.post("/users", store);
+// GET localhost:8080/api/v1/products/1234 - get a product
+router.get("/products/:id", show);
 
-// GET localhost:8080/api/v1/users/1234 - get an user
-router.get("/users/:id", show);
-
-// PUT localhost:8080/api/v1/users/1234 - Update an user
-router.put("/users/:id", update);
-
-// DELETE localhost:8080/api/v1/users/1234 - delete an user
-router.delete("/users/:id", destroy);
+// POST localhost:8080/api/v1/products/add-favourite
+router.post("/products/favourite-toggle", toggleFavourite);
 
 export default router;

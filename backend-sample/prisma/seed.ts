@@ -61,6 +61,13 @@ const sizes = [
   { name: "XXL" },
 ];
 
+const images = [
+  { image: "pager1.png" },
+  { image: "pager2.png" },
+  { image: "pager3.png" },
+  { image: "pager4.png" },
+];
+
 const products = [
   {
     categoryId: 1,
@@ -73,6 +80,9 @@ const products = [
     image: "t1.png",
     description:
       "a long- or short-sleeved garment for the upper part of the body, usually lightweight and having a collar and a front opening.",
+    images: {
+      create: images,
+    },
   },
   {
     categoryId: 1,
@@ -85,6 +95,9 @@ const products = [
     image: "t3.png",
     description:
       "a long- or short-sleeved garment for the upper part of the body, usually lightweight and having a collar and a front opening.",
+    images: {
+      create: images,
+    },
   },
   {
     categoryId: 2,
@@ -97,6 +110,9 @@ const products = [
     image: "t2.png",
     description:
       "a long- or short-sleeved garment for the upper part of the body, usually lightweight and having a collar and a front opening.",
+    images: {
+      create: images,
+    },
   },
   {
     categoryId: 1,
@@ -109,6 +125,9 @@ const products = [
     image: "t4.png",
     description:
       "a long- or short-sleeved garment for the upper part of the body, usually lightweight and having a collar and a front opening.",
+    images: {
+      create: images,
+    },
   },
   {
     categoryId: 2,
@@ -121,6 +140,10 @@ const products = [
     image: "w1.png",
     description:
       "a long- or short-sleeved garment for the upper part of the body, usually lightweight and having a collar and a front opening.",
+
+    images: {
+      create: images,
+    },
   },
   {
     categoryId: 2,
@@ -133,6 +156,9 @@ const products = [
     image: "w2.png",
     description:
       "a long- or short-sleeved garment for the upper part of the body, usually lightweight and having a collar and a front opening.",
+    images: {
+      create: images,
+    },
   },
   {
     categoryId: 1,
@@ -145,6 +171,9 @@ const products = [
     image: "w4.png",
     description:
       "a long- or short-sleeved garment for the upper part of the body, usually lightweight and having a collar and a front opening.",
+    images: {
+      create: images,
+    },
   },
   {
     categoryId: 1,
@@ -157,6 +186,9 @@ const products = [
     image: "w5.png",
     description:
       "a long- or short-sleeved garment for the upper part of the body, usually lightweight and having a collar and a front opening.",
+    images: {
+      create: images,
+    },
   },
 ];
 

@@ -1,6 +1,8 @@
 import "dotenv/config";
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
+import { createError } from "../utils/error";
+import { errorCode } from "../config";
 
 // Extend the Request interface to include the userId property
 interface CustomRequest extends Request {
@@ -10,10 +12,13 @@ interface CustomRequest extends Request {
 const isAuth = (req: CustomRequest, res: Response, next: NextFunction) => {
   const authHeader = req.get("Authorization");
   if (!authHeader) {
-    const err: any = new Error("You are not an authenticated user!.");
-    err.status = 401;
-    err.code = "Error_Unauthenticated";
-    return next(err);
+    return next(
+      createError(
+        "You are not an authenticated user.",
+        401,
+        errorCode.unauthenticated
+      )
+    );
   }
 
   const token = authHeader!.split(" ")[1];

@@ -1,11 +1,8 @@
 import "dotenv/config";
 
-import asyncHandler from "express-async-handler";
-import { randomBytes } from "crypto";
+import { Request, Response, NextFunction } from "express";
 import { body, validationResult } from "express-validator";
-// import { v4: uuidv4 } from "uuid";
-// import moment from 'moment';
-const moment = require("moment");
+import moment from "moment";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 
@@ -26,6 +23,9 @@ import {
   updateUser,
 } from "../services/authService";
 import { getUserById } from "../services/userService";
+import { generateOTP, generateToken } from "../utils/generate";
+import { createError } from "../utils/error";
+import { errorCode } from "../config";
 
 /*
  * POST localhost:8080/api/v1/register
@@ -34,18 +34,18 @@ import { getUserById } from "../services/userService";
  * But in this app, we will simulate fake OTP - 123456
  */
 
-function generateRandomToken(length = 32) {
-  return randomBytes(length).toString("hex"); // Generates a hexadecimal token
-}
-
-export const register = asyncHandler(async (req, res, next) => {
+export const register = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   const phone = req.body.phone;
   const user = await getUserByPhone(phone);
   checkPhoneExist(user);
 
   // OTP processing eg. Sending OTP request to Operator
   const otpCheck = await getOtpByPhone(phone);
-  const token = generateRandomToken();
+  const token = generateToken();
   let result;
   let otp = "123456";
 
@@ -74,12 +74,13 @@ export const register = asyncHandler(async (req, res, next) => {
       result = await updateOtp(otpCheck.id, otpData);
     } else {
       if (otpCheck.count === 3) {
-        const err: any = new Error(
-          "OTP requests are allowed only 3 times per day. Please try again tomorrow,if you reach the limit."
+        return next(
+          createError(
+            "OTP is allowed to request 3 times per day",
+            405,
+            errorCode.overLimit
+          )
         );
-        err.status = 405;
-        err.code = "Error_OverLimit";
-        return next(err);
       } else {
         const otpData = {
           otp,
@@ -98,7 +99,7 @@ export const register = asyncHandler(async (req, res, next) => {
     phone: result.phone,
     token: result.rememberToken,
   });
-});
+};
 
 /*
  * POST localhost:8080/api/v1/verify-otp
@@ -121,16 +122,13 @@ export const verifyOTP = [
     .isLength({ min: 6, max: 6 })
     .escape(),
 
-  asyncHandler(async (req, res, next) => {
-    // Extract the validation errors from a request.
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
+  async (req: Request, res: Response, next: NextFunction) => {
+    const errors = validationResult(req).array({ onlyFirstError: true });
+    if (errors.length > 0) {
       // There are errors. Render form again with sanitized values/error messages.
-      const err: any = new Error("Validation failed!");
-      err.status = 400;
-      err.code = "Error_Invalid";
-      return next(err);
+      return next(createError(errors[0].msg, 400, errorCode.invalid));
     }
+
     const { token, phone, otp } = req.body;
 
     const user = await getUserByPhone(phone);
@@ -152,21 +150,13 @@ export const verifyOTP = [
       };
       result = await updateOtp(otpCheck!.id, otpData);
 
-      const err: any = new Error("Token is invalid.");
-      err.status = 400;
-      err.code = "Error_Invalid";
-      return next(err);
+      return next(createError("Invalid token", 400, errorCode.invalid));
     }
 
-    const difference = moment() - moment(otpCheck!.updatedAt);
-    // console.log("Diff", difference);
-
-    if (difference > 90000) {
-      // expire at 1 min 30 sec
-      const err: any = new Error("OTP is expired.");
-      err.status = 403;
-      err.code = "Error_Expired";
-      return next(err);
+    // OTP is expired
+    const isExpired = moment().diff(otpCheck!.updatedAt, "minutes") > 2;
+    if (isExpired) {
+      return next(createError("OTP is expired.", 403, errorCode.otpExpired));
     }
 
     if (otpCheck!.otp !== otp) {
@@ -185,13 +175,10 @@ export const verifyOTP = [
         result = await updateOtp(otpCheck!.id, otpData);
       }
       // ----- Ending -----------
-      const err: any = new Error("OTP is incorrect.");
-      err.status = 401;
-      err.code = "Error_Invalid";
-      return next(err);
+      return next(createError("OTP is incorrect.", 401, errorCode.invalid));
     }
 
-    const randomToken = generateRandomToken();
+    const randomToken = generateToken();
     const otpData = {
       verifyToken: randomToken,
       count: 1,
@@ -204,7 +191,7 @@ export const verifyOTP = [
       phone: result.phone,
       token: result.verifyToken,
     });
-  }),
+  },
 ];
 
 /*
@@ -228,16 +215,13 @@ export const confirmPassword = [
     .isLength({ min: 8, max: 8 })
     .escape(),
 
-  asyncHandler(async (req, res, next) => {
-    // Extract the validation errors from a request.
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
+  async (req: Request, res: Response, next: NextFunction) => {
+    const errors = validationResult(req).array({ onlyFirstError: true });
+    if (errors.length > 0) {
       // There are errors. Render form again with sanitized values/error messages.
-      const err: any = new Error("Validation failed!");
-      err.status = 400;
-      err.code = "Error_Invalid";
-      return next(err);
+      return next(createError(errors[0].msg, 400, errorCode.invalid));
     }
+
     const { token, phone, password } = req.body;
 
     const user = await getUserByPhone(phone);
@@ -247,12 +231,9 @@ export const confirmPassword = [
     checkOtpPhone(otpCheck);
 
     if (otpCheck!.error === 5) {
-      const err: any = new Error(
-        "This request may be an attack. If not, try again tomorrow."
+      return next(
+        createError("This request may be an attack.", 400, errorCode.attack)
       );
-      err.status = 401;
-      err.code = "Error_Unauthorised";
-      return next(err);
     }
 
     let result;
@@ -263,26 +244,24 @@ export const confirmPassword = [
       };
       result = await updateOtp(otpCheck!.id, otpData);
 
-      const err: any = new Error("Token is invalid.");
-      err.status = 400;
-      err.code = "Error_Invalid";
-      return next(err);
+      return next(createError("Invalid token", 400, errorCode.invalid));
     }
 
-    const difference = moment() - moment(otpCheck!.updatedAt);
-    // console.log("Diff", difference);
-
-    if (difference > 300000) {
-      // will expire after 5 min
-      const err: any = new Error("Your request is expired. Please try again.");
-      err.status = 403;
-      err.code = "Error_Expired";
-      return next(err);
+    // request is expired
+    const isExpired = moment().diff(otpCheck!.updatedAt, "minutes") > 10;
+    if (isExpired) {
+      return next(
+        createError(
+          "Your request is expired. Please try again.",
+          403,
+          errorCode.requestExpired
+        )
+      );
     }
 
     const salt = await bcrypt.genSalt(10);
     const hashPassword = await bcrypt.hash(password, salt);
-    const randToken = generateRandomToken();
+    const randToken = generateToken();
 
     const userData = {
       phone: req.body.phone,
@@ -308,7 +287,7 @@ export const confirmPassword = [
       randToken: randToken,
       refreshToken: refreshToken,
     });
-  }),
+  },
 ];
 
 /*
@@ -325,15 +304,11 @@ export const login = [
     .isLength({ min: 8, max: 8 })
     .escape(),
 
-  asyncHandler(async (req, res, next) => {
-    // Extract the validation errors from a request.
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
+  async (req: Request, res: Response, next: NextFunction) => {
+    const errors = validationResult(req).array({ onlyFirstError: true });
+    if (errors.length > 0) {
       // There are errors. Render form again with sanitized values/error messages.
-      const err: any = new Error("Validation failed!");
-      err.status = 400;
-      err.code = "Error_Invalid";
-      return next(err);
+      return next(createError(errors[0].msg, 400, errorCode.invalid));
     }
 
     const { phone, password } = req.body;
@@ -344,12 +319,13 @@ export const login = [
 
     // Wrong Password allowed 3 times per day
     if (user!.status === "freeze") {
-      const err: any = new Error(
-        "Your account is temporarily locked. Please contact us."
+      return next(
+        createError(
+          "Your account is temporarily locked. Please contact us.",
+          401,
+          errorCode.accountFreeze
+        )
       );
-      err.status = 401;
-      err.code = "Error_Freeze";
-      return next(err);
     }
 
     let result;
@@ -381,13 +357,10 @@ export const login = [
         }
       }
       // ----- Ending -----------
-      const err: any = new Error("Password is wrong.");
-      err.status = 401;
-      err.code = "Error_Invalid";
-      return next(err);
+      return next(createError("Password is wrong.", 401, errorCode.invalid));
     }
 
-    const randToken = generateRandomToken();
+    const randToken = generateToken();
 
     if (user!.error >= 1) {
       const userData = {
@@ -418,7 +391,7 @@ export const login = [
       randToken: randToken,
       refreshToken: refreshToken,
     });
-  }),
+  },
 ];
 
 export const refreshToken = [
@@ -429,23 +402,22 @@ export const refreshToken = [
     .escape(),
   body("randToken", "RandToken must not be empty.").trim().notEmpty().escape(),
 
-  asyncHandler(async (req, res, next) => {
-    // Extract the validation errors from a request.
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
+  async (req: Request, res: Response, next: NextFunction) => {
+    const errors = validationResult(req).array({ onlyFirstError: true });
+    if (errors.length > 0) {
       // There are errors. Render form again with sanitized values/error messages.
-      const err: any = new Error("Validation failed!");
-      err.status = 400;
-      err.code = "Error_Invalid";
-      return next(err);
+      return next(createError(errors[0].msg, 400, errorCode.invalid));
     }
 
     const authHeader = req.get("Authorization");
     if (!authHeader) {
-      const err: any = new Error("You are not an authenticated user!.");
-      err.status = 401;
-      err.code = "Error_Unauthenticated";
-      throw err;
+      return next(
+        createError(
+          "You are not an authenticated user!.",
+          401,
+          errorCode.unauthenticated
+        )
+      );
     }
     const { refreshToken, randToken } = req.body;
 
@@ -459,10 +431,9 @@ export const refreshToken = [
         id: number;
       };
     } catch (error: any) {
-      error.status = 401;
-      error.message = "App needs to be logged out.";
-      error.code = "Error_Attack"; // LogOut
-      return next(error);
+      return next(
+        createError("App needs to be logged out.", 401, errorCode.attack)
+      );
     }
     const userId = decodedToken.id;
 
@@ -475,15 +446,16 @@ export const refreshToken = [
       };
       await updateUser(userId, userData);
 
-      const err: any = new Error(
-        "This request may be an attack. Please contact the user team."
+      return next(
+        createError(
+          "This request may be an attack. Please contact the user team.",
+          400,
+          errorCode.attack
+        )
       );
-      err.status = 400;
-      err.code = "Error_Attack";
-      return next(err);
     }
 
-    const randTokenNew = generateRandomToken();
+    const randTokenNew = generateToken();
 
     const userData = {
       randToken: randTokenNew,
@@ -511,5 +483,5 @@ export const refreshToken = [
       randToken: randTokenNew,
       refreshToken: refreshTokenNew,
     });
-  }),
+  },
 ];

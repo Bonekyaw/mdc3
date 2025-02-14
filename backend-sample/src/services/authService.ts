@@ -4,13 +4,13 @@ const prisma = new PrismaClient();
 
 export const getUserByPhone = async (phone: string) => {
   return prisma.user.findUnique({
-    where: { phone: phone }, // { phone }
+    where: { phone },
   });
 };
 
 export const getOtpByPhone = async (phone: string) => {
   return prisma.otp.findUnique({
-    where: { phone: phone }, // { phone }
+    where: { phone },
   });
 };
 
@@ -20,7 +20,7 @@ export const createOtp = async (otpData: any) => {
 
 export const updateOtp = async (id: number, otpData: any) => {
   return prisma.otp.update({
-    where: { id: id },
+    where: { id },
     data: otpData,
   });
 };
@@ -31,7 +31,7 @@ export const createUser = async (userData: any) => {
 
 export const updateUser = async (id: number, userData: any) => {
   return prisma.user.update({
-    where: { id: id },
+    where: { id },
     data: userData,
   });
 };

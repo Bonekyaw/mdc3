@@ -1,8 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import asyncHandler from "express-async-handler";
 import { body, query, param, validationResult } from "express-validator";
-import { PrismaClient } from "@prisma/client"; // { Prisma, PrismaClient }
-const prisma = new PrismaClient();
 
 import {
   getAllProducts,
@@ -10,6 +7,10 @@ import {
   addProductToFavourite,
   removeProductFromFavourite,
 } from "../services/productService";
+import { createError } from "../utils/error";
+import { errorCode } from "../config";
+import { getUserById } from "../services/userService";
+import { checkUser } from "../utils/auth";
 
 interface CustomRequest extends Request {
   userId?: number; // or string, depending on your ID type
@@ -17,131 +18,126 @@ interface CustomRequest extends Request {
 
 export const index = [
   // Validate and sanitize fields.
-  query("limit", "Limit number must be integer.").isInt({ gt: 0 }).toInt(),
-  query("cursor", "Cursor must be integer.")
-    .isInt({ gt: 0 })
-    .toInt()
-    .optional(),
-  query("category", "category id must be integer.")
-    .isInt({ gt: 0 })
-    .toInt()
-    .optional(),
+  query("limit", "Limit number must be integer.").isInt({ gt: 0 }).optional(),
+  query("cursor", "Cursor must be integer.").isInt({ gt: 0 }).optional(),
+  query("category", "category id must be integer.").isInt({ gt: 0 }).optional(),
 
-  asyncHandler(async (req: CustomRequest, res, next) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
+  async (req: CustomRequest, res: Response, next: NextFunction) => {
+    const errors = validationResult(req).array({ onlyFirstError: true });
+    if (errors.length > 0) {
       // There are errors. Render form again with sanitized values/error messages.
-      const err: any = new Error("Validation failed!");
-      err.status = 400;
-      err.code = "Error_Invalid";
-      return next(err);
+      return next(createError(errors[0].msg, 400, errorCode.invalid));
     }
 
-    // const { page, limit } = req.query;
+    const userId = req.userId;
+    const user = await getUserById(userId!);
+    checkUser(user);
+
     const limit = req.query.limit || 4; // Be aware of error overtaking db rows;
-    const cursor = req.query.cursor ? { id: +req.query.cursor } : null;
-    const filters = req.query.category
-      ? { categoryId: +req.query.category }
-      : null;
-    const userId = req.userId || 0;
+    const cursor = req.query.cursor;
 
-    // Authorization - if it is "user" role, no one is allowed.
-    // Same as - authorise(true, user, "super", "manager", "editor")
-    // authorise(false, user, "user");
+    const where = req.query.category ? { categoryId: +req.query.category } : {};
 
-    // const products = await getAllProducts();
-
-    // const filters = { categoryId: 2 };
-    const fields = {
-      id: true,
-      brand: true,
-      title: true,
-      star: true,
-      quantity: true,
-      price: true,
-      discount: true,
-      image: true,
-      categoryId: true,
-    };
-    const relation = {
-      users: {
-        where: {
-          id: userId,
-        },
-        select: {
-          id: true,
+    const options = {
+      where,
+      take: +limit + 1,
+      skip: cursor ? 1 : 0,
+      cursor: cursor ? { id: +cursor } : undefined,
+      select: {
+        id: true,
+        brand: true,
+        title: true,
+        star: true,
+        quantity: true,
+        price: true,
+        discount: true,
+        image: true,
+        categoryId: true,
+        users: {
+          where: {
+            id: userId,
+          },
+          select: {
+            id: true,
+          },
         },
       },
+      orderBy: {
+        id: "desc",
+      },
     };
-    const options = { take: limit } as any;
-    if (cursor) {
-      options.skip = 1;
-      options.cursor = cursor;
-    }
-    if (filters) {
-      options.where = filters;
-    }
-    options.orderBy = { id: "desc" };
-    options.select = { ...fields, ...relation };
-    // options.include = relation; // Either select or include can be used.
 
-    const products = await getAllProducts(options, +limit);
-    res.status(200).json(products);
-  }),
+    const products = await getAllProducts(options);
+    const hasNextPage = products.length > +limit;
+
+    if (hasNextPage) {
+      products.pop();
+    }
+
+    const newCursor =
+      products.length > 0 ? products[products.length - 1].id : null;
+
+    res.status(200).json({
+      message: "Get All infinite products",
+      hasNextPage,
+      newCursor,
+      products,
+    });
+  },
 ];
 
 export const show = [
   // Validate and sanitize fields.
   param("id", "Product ID must be integer.").isInt({ gt: 0 }).toInt(),
 
-  asyncHandler(async (req: CustomRequest, res, next) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
+  async (req: CustomRequest, res: Response, next: NextFunction) => {
+    const errors = validationResult(req).array({ onlyFirstError: true });
+    if (errors.length > 0) {
       // There are errors. Render form again with sanitized values/error messages.
-      const err: any = new Error("Validation failed!");
-      err.status = 400;
-      err.code = "Error_Invalid";
-      return next(err);
+      return next(createError(errors[0].msg, 400, errorCode.invalid));
     }
 
-    const productId = req.params.id;
-    const userId = req.userId || 0;
+    const userId = req.userId;
+    const user = await getUserById(userId!);
+    checkUser(user);
 
-    const product = await getProductById(+productId, +userId);
+    const productId = req.params.id;
+
+    const product = await getProductById(+productId, +userId!);
 
     res.status(200).json(product);
-  }),
+  },
 ];
 
 export const toggleFavourite = [
   // Validate and sanitize fields.
-  body("productId", "Product ID must not be empty.").isInt({ gt: 0 }).toInt(),
+  body("productId", "Product ID must not be empty.").isInt({ gt: 0 }),
   body("favourite", "Favourite must not be empty.").isBoolean(),
 
-  asyncHandler(async (req: CustomRequest, res, next) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
+  async (req: CustomRequest, res: Response, next: NextFunction) => {
+    const errors = validationResult(req).array({ onlyFirstError: true });
+    if (errors.length > 0) {
       // There are errors. Render form again with sanitized values/error messages.
-      const err: any = new Error("Validation failed!");
-      err.status = 400;
-      err.code = "Error_Invalid";
-      return next(err);
+      return next(createError(errors[0].msg, 400, errorCode.invalid));
     }
+
+    const userId = req.userId;
+    const user = await getUserById(userId!);
+    checkUser(user);
 
     const productId = req.body.productId;
     const favourite = req.body.favourite;
-    const userId = req.userId || 0;
 
     let result;
 
     if (favourite) {
-      await addProductToFavourite(+productId, +userId);
+      await addProductToFavourite(+productId, +userId!);
       result = { productId, userId };
     } else {
-      await removeProductFromFavourite(+productId, +userId);
+      await removeProductFromFavourite(+productId, +userId!);
       result = { productId, userId: null };
     }
 
     res.status(200).json(result);
-  }),
+  },
 ];

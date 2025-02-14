@@ -1,4 +1,6 @@
 import { Request, Response, NextFunction } from "express";
+import { createError } from "../utils/error";
+import { errorCode } from "../config";
 
 export const validatePhone = (
   req: Request,
@@ -8,27 +10,25 @@ export const validatePhone = (
   let phone = req.body.phone.replace(/\s/g, "");
 
   if (phone.match("^[0-9]+$") == null) {
-    // res.status(400).json({
-    //     error: "Invalid phone number. Please enter the correct one."
-    // });
-    // throw new Error("Invalid phone number. Please enter the correct one.");
-    const err: any = new Error(
-      "Invalid phone number. Please enter the correct one."
+    return next(
+      createError(
+        "Invalid phone number. Please enter the correct one.",
+        400,
+        errorCode.invalid
+      )
     );
-    err.status = 400;
-    err.code = "Error_Invalid";
-    return next(err);
   }
   if (phone.slice(0, 2) == "09") {
     phone = phone.substring(2, phone.length);
   }
   if (phone.length < 5 || phone.length > 12) {
-    const err: any = new Error(
-      "Invalid phone number. Please enter the correct one."
+    return next(
+      createError(
+        "Invalid phone number. Please enter the correct one.",
+        400,
+        errorCode.invalid
+      )
     );
-    err.status = 400;
-    err.code = "Error_Invalid";
-    return next(err);
   }
   req.body.phone = phone;
   next();

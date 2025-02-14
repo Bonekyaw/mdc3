@@ -2,15 +2,8 @@ import { PrismaClient } from "@prisma/client"; // { Prisma, PrismaClient }
 
 const prisma = new PrismaClient();
 
-export const getAllProducts = async (options: any, limit: number) => {
-  const products = await prisma.product.findMany(options);
-  const lastProductInResults = products.length ? products[limit - 1] : null; // Remember: zero-based index! :)
-  const myCursor = products.length ? lastProductInResults?.id : null;
-
-  return {
-    data: products,
-    nextCursor: myCursor,
-  };
+export const getAllProducts = async (options: any) => {
+  return prisma.product.findMany(options);
 };
 
 export const getProductById = async (productId: number, userId: number) => {
@@ -18,12 +11,12 @@ export const getProductById = async (productId: number, userId: number) => {
     where: { id: productId },
     include: {
       colors: {
-        include: {
+        select: {
           color: true,
         },
       },
       sizes: {
-        include: {
+        select: {
           size: true,
         },
       },
