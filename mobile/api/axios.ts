@@ -29,7 +29,7 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    if (error.response.status === 401 && !originalRequest._retry) {
+    if (error?.response?.status === 401 && !originalRequest._retry) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedRequestQueue.push({
@@ -47,7 +47,7 @@ api.interceptors.response.use(
         const randToken = await SecureStore.getItemAsync("randToken");
 
         const { data } = await axios.post(
-          API_URL + "randToken",
+          API_URL + "refresh-token",
           { refreshToken, randToken },
           {
             headers: {

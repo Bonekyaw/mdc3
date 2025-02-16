@@ -7,7 +7,7 @@ import { Icon } from "@/components/ui/icon";
 import { memo } from "react";
 
 function Cart() {
-  console.log("Rendering Cart Icon ----");
+  // console.log("Rendering Cart Icon ----");
 
   return (
     <Box className="items-center">

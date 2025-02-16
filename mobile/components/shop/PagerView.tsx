@@ -62,7 +62,7 @@ const Pagination = ({
 };
 
 function PagerViewScreen() {
-  console.log("View pager rendered ---");
+  // console.log("View pager rendered ---");
 
   const ref = React.useRef<PagerView>(null);
   // const [currentPage, setCurrentPage] = useState(0);
