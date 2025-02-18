@@ -93,7 +93,7 @@ const Home = () => {
     staleTime: 5 * 60 * 1000, // 5 mins
   });
 
-  const toggleFavouriteMutation = useMutation({
+  const { mutate } = useMutation({
     mutationFn: toggleFavourite,
     onMutate: async ({ productId, favourite }) => {
       await queryClient.cancelQueries({ queryKey: ["products", select] });
@@ -125,7 +125,7 @@ const Home = () => {
   });
 
   const handleToggleFavourite = (productId: number, favourite: boolean) => {
-    toggleFavouriteMutation.mutate({ productId, favourite });
+    mutate({ productId, favourite });
   };
 
   const onSelectHandler = useCallback((id: number) => {
