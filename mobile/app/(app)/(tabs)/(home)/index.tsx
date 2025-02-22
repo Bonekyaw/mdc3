@@ -20,6 +20,12 @@ import { ArrowUpRight } from "lucide-react-native";
 import { Skeleton, SkeletonText } from "@/components/ui/skeleton";
 import type { ProductType, CategoryType } from "@/types";
 import api from "@/api/axios";
+import {
+  useToast,
+  Toast,
+  ToastTitle,
+  ToastDescription,
+} from "@/components/ui/toast";
 
 const blurhash =
   "|rF?hV%2WCj[ayj[a|j[az_NaeWBj@ayfRayfQfQM{M|azj[azf6fQfQfQIpWXofj[ayj[j[fQayWCoeoeaya}j[ayfQa{oLj?j[WVj[ayayj[fQoff7azayj[ayj[j[ayofayayayj[fQj[ayayj[ayfjj[j[ayjuayj[";
@@ -118,9 +124,11 @@ const Home = () => {
     },
     onError: (error, variables, context) => {
       queryClient.setQueryData(["products", select], context?.previousProducts);
+      handleToast("An error occurs", error.message);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products", select] });
+      queryClient.invalidateQueries({ queryKey: ["product"] });
     },
   });
 
@@ -135,6 +143,32 @@ const Home = () => {
   const goDetail = (id: number) => {
     router.navigate({ pathname: "/detail", params: { id } });
   };
+
+  const toast = useToast();
+  const [toastId, setToastId] = React.useState(0);
+  const handleToast = (title: string, description: string) => {
+    if (!toast.isActive(toastId.toString())) {
+      showNewToast(title, description);
+    }
+  };
+  const showNewToast = useCallback((title: string, description: string) => {
+    const newId = Math.random();
+    setToastId(newId);
+    toast.show({
+      id: newId.toString(),
+      placement: "bottom",
+      duration: 2000,
+      render: ({ id }) => {
+        const uniqueToastId = "toast-" + id;
+        return (
+          <Toast nativeID={uniqueToastId} action="info" variant="solid">
+            <ToastTitle>{title}</ToastTitle>
+            <ToastDescription>{description}</ToastDescription>
+          </Toast>
+        );
+      },
+    });
+  }, []);
 
   // if (isCategoryLoading || isProductLoading) {
   //   return <Text>Loading...</Text>;

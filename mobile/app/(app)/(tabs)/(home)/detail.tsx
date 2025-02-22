@@ -1,8 +1,9 @@
 import React from "react";
 import { useLocalSearchParams, Stack } from "expo-router";
 import { Heart } from "lucide-react-native";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { products } from "@/data";
+// import { products } from "@/data";
 import { VStack } from "@/components/ui/vstack";
 import { Text } from "@/components/ui/text";
 import { Pressable } from "@/components/ui/pressable";
@@ -44,6 +45,8 @@ import {
   ToastTitle,
   ToastDescription,
 } from "@/components/ui/toast";
+import api from "@/api/axios";
+import type { ProductType, CartItem } from "@/types";
 
 type CartProps = {
   id: number;
@@ -52,11 +55,33 @@ type CartProps = {
   quantity: number;
 };
 
+const fetchProduct = async (productId: number): Promise<ProductType> => {
+  // console.log("Fetching Product ---", productId);
+
+  const response = await api.get(`/users/products/${productId}`);
+  console.log("Product ---", response.data);
+
+  return response.data;
+};
+
 const Detail = () => {
   console.log("Rendering Detail ---");
 
   const { id } = useLocalSearchParams();
-  const product = products.find((p) => p.id === +id);
+
+  const queryClient = useQueryClient();
+  const {
+    data: product,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: ["product", id],
+    queryFn: () => fetchProduct(+id),
+    staleTime: 1000 * 60 * 5, // Cache data for 5 minutes
+  });
+
+  // const product = products.find((p) => p.id === +id);
   const [colors, setColors] = React.useState([]);
   const [sizes, setSizes] = React.useState([]);
   const [quantity, setQuantity] = React.useState(1);
@@ -82,14 +107,57 @@ const Detail = () => {
     setQuantity(1);
   };
 
+  const toggleFavourite = async (productId: number) => {
+    console.log("Favourite api ----", productId);
+
+    const response = await api.patch("/users/products/favourite-toggle", {
+      productId,
+      favourite: product?.users.length == 0,
+    });
+    return response.data;
+  };
+
+  const { mutate } = useMutation({
+    mutationFn: toggleFavourite,
+    onMutate: async (productId) => {
+      await queryClient.cancelQueries({ queryKey: ["product", id] });
+
+      const previousProduct = queryClient.getQueryData(["product", id]);
+
+      queryClient.setQueryData(["product", id], (oldData: any) => {
+        const favouriteData = product?.users.length == 0 ? [{ id: 1 }] : [];
+
+        return {
+          ...oldData,
+          users: favouriteData,
+        };
+      });
+
+      return { previousProduct };
+    },
+    onError: (error, variables, context) => {
+      queryClient.setQueryData(["product", id], context?.previousProduct);
+      handleToast("An error occurs", error.message);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["products", product?.categoryId],
+      });
+    },
+  });
+
+  const handleToggleFavourite = () => {
+    mutate(+id);
+  };
+
   const toast = useToast();
   const [toastId, setToastId] = React.useState(0);
-  const handleToast = () => {
+  const handleToast = (title: string, description: string) => {
     if (!toast.isActive(toastId.toString())) {
-      showNewToast();
+      showNewToast(title, description);
     }
   };
-  const showNewToast = () => {
+  const showNewToast = (title: string, description: string) => {
     const newId = Math.random();
     setToastId(newId);
     toast.show({
@@ -100,15 +168,32 @@ const Detail = () => {
         const uniqueToastId = "toast-" + id;
         return (
           <Toast nativeID={uniqueToastId} action="info" variant="solid">
-            <ToastTitle>{`Must choose ${colors.length == 0 ? "color - " : ""} ${sizes.length == 0 ? "size" : ""}`}</ToastTitle>
-            <ToastDescription>
-              Please set quantity after choosing
-            </ToastDescription>
+            <ToastTitle>{title}</ToastTitle>
+            <ToastDescription>{description}</ToastDescription>
           </Toast>
         );
       },
     });
   };
+
+  if (isLoading) {
+    return (
+      <VStack className="flex-1 items-center justify-center">
+        <Text>Loading...</Text>
+      </VStack>
+    );
+  }
+
+  if (error) {
+    return (
+      <VStack className="flex-1 items-center justify-center">
+        <Text className="mb-4">Error : {error.message}</Text>
+        <Button size="md" variant="solid" action="primary" onPress={refetch}>
+          <ButtonText>Retry</ButtonText>
+        </Button>
+      </VStack>
+    );
+  }
 
   return (
     <VStack className="flex-1 bg-white">
@@ -139,10 +224,10 @@ const Detail = () => {
                 ({product?.quantity})
               </Text>
             </HStack>
-            <Pressable>
+            <Pressable onPress={handleToggleFavourite}>
               <Icon
                 as={Heart}
-                className={`m-1 h-5 w-5 text-red-400 ${true && "fill-red-400"}`}
+                className={`m-1 h-5 w-5 text-red-400 ${product!.users?.length > 0 && "fill-red-400"}`}
               />
             </Pressable>
           </HStack>
@@ -166,16 +251,13 @@ const Detail = () => {
             }}
           >
             <HStack space="xl" className="flex-wrap">
-              {product?.colors.map((color) => {
-                if (!color.stock) {
-                  return null;
-                }
+              {product?.colors.map((item) => {
                 return (
-                  <Checkbox value={color.name} key={color.id}>
+                  <Checkbox value={item.color.name} key={item.color.id}>
                     <CheckboxIndicator>
                       <CheckboxIcon as={CheckIcon} />
                     </CheckboxIndicator>
-                    <CheckboxLabel>{color.name}</CheckboxLabel>
+                    <CheckboxLabel>{item.color.name}</CheckboxLabel>
                   </Checkbox>
                 );
               })}
@@ -189,16 +271,13 @@ const Detail = () => {
             }}
           >
             <HStack space="xl" className="flex-wrap">
-              {product?.sizes.map((size) => {
-                if (!size.stock) {
-                  return null;
-                }
+              {product?.sizes.map((item) => {
                 return (
-                  <Checkbox value={size.name} key={size.id}>
+                  <Checkbox value={item.size.name} key={item.size.id}>
                     <CheckboxIndicator>
                       <CheckboxIcon as={CheckIcon} />
                     </CheckboxIndicator>
-                    <CheckboxLabel>{size.name}</CheckboxLabel>
+                    <CheckboxLabel>{item.size.name}</CheckboxLabel>
                   </Checkbox>
                 );
               })}
@@ -213,7 +292,9 @@ const Detail = () => {
                   setShowActionsheet(true);
                   return;
                 }
-                handleToast();
+                const title = `Must choose ${colors.length == 0 ? "color - " : ""} ${sizes.length == 0 ? "size" : ""}`;
+                const description = "Please set quantity after choosing";
+                handleToast(title, description);
               }}
             >
               <ButtonText>Set Quantity</ButtonText>
