@@ -1,5 +1,5 @@
 import React from "react";
-import { useLocalSearchParams, Stack } from "expo-router";
+import { useLocalSearchParams, Stack, router } from "expo-router";
 import { Heart } from "lucide-react-native";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -47,6 +47,7 @@ import {
 } from "@/components/ui/toast";
 import api from "@/api/axios";
 import type { ProductType, CartItem } from "@/types";
+import useCartStore from "@/store/cartStore";
 
 type CartProps = {
   id: number;
@@ -68,6 +69,7 @@ const Detail = () => {
   console.log("Rendering Detail ---");
 
   const { id } = useLocalSearchParams();
+  const { addToCart } = useCartStore();
 
   const queryClient = useQueryClient();
   const {
@@ -174,6 +176,22 @@ const Detail = () => {
         );
       },
     });
+  };
+
+  const addCartToStore = () => {
+    if (cart.length === 0) {
+      return handleToast("Cart is empty", "Please add items to cart");
+    }
+    const cartProduct = {
+      id: product?.id!,
+      title: product?.title!,
+      price: product?.price!,
+      image: product?.image,
+      items: cart,
+    };
+
+    addToCart(cartProduct);
+    router.back();
   };
 
   if (isLoading) {
@@ -382,12 +400,15 @@ const Detail = () => {
           </VStack>
         </ActionsheetContent>
       </Actionsheet>
-      <Box className="self-end">
-        <Fab size="md" className="bottom-28 bg-green-500">
-          <FabIcon as={AddIcon} size="md" />
-          <FabLabel bold>Add To Cart</FabLabel>
-        </Fab>
-      </Box>
+      <Fab
+        size="md"
+        placement="bottom right"
+        className="mb-24 bg-green-500"
+        onPress={addCartToStore}
+      >
+        <FabIcon as={AddIcon} size="md" />
+        <FabLabel bold>Add To Cart</FabLabel>
+      </Fab>
     </VStack>
   );
 };
